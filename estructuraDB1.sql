@@ -1,3 +1,6 @@
+-- RAMA DE DAVID 
+
+
 CREATE TABLE rolUniversitario (
     idRolUniversitario INT IDENTITY(1,1) PRIMARY KEY,
     nombreRolUniversitario VARCHAR(100) NOT NULL
