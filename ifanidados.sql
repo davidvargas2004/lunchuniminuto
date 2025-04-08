@@ -26,7 +26,7 @@
 
 
 
--- Ejercicio de IF anidado corregido: Verificar disponibilidad de menú según hora del día y categoría
+-- Ejercicio de IF anidado  Verificar disponibilidad de menú según hora del día y categoría
 DECLARE @idCliente INT = 1;
 DECLARE @idMenuComida INT = 2;
 DECLARE @horaActual TIME = CAST(GETDATE() AS TIME);
