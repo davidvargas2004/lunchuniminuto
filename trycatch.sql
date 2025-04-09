@@ -67,146 +67,61 @@ END CATCH;
 GO
 
 
--- Este código define un procedimiento almacenado llamado `validarPagoOrden` que verifica si una orden de servicio tiene un método de pago válido (como Nequi, Daviplata, PSE, tarjeta o efectivo) y si el estado del pago está confirmado. Primero valida que la orden exista, luego consulta el cliente, el estado del pago y la descripción del método de pago. Si falta alguno de estos datos o el método no es aceptado, lanza un mensaje de error y retorna un código específico. Si todo está en orden, devuelve un mensaje de éxito indicando que la orden está en preparación (de forma simulada).
-
-CREATE PROCEDURE validarPagoOrden
-    @idOrdenServicio INT
-AS
-BEGIN
-    DECLARE @idCliente INT;
-    DECLARE @estadoPago VARCHAR(50);
-    DECLARE @descripcionMetodoPago NVARCHAR(MAX);
-    DECLARE @esMetodoValido BIT;
-
-    BEGIN TRY
-        -- Verificar si la orden existe
-        IF NOT EXISTS (SELECT 1 FROM ordenServicio WHERE idOrdenServicio = @idOrdenServicio)
-        BEGIN
-            SELECT '❌ Error: Orden no encontrada.' AS Resultado;
-            RETURN 1;
-        END
-
-        -- Obtener datos
-        SELECT 
-            @idCliente = os.idCliente,
-            @estadoPago = os.estadoPago,
-            @descripcionMetodoPago = mp.descripcionMetodoPago
-        FROM ordenServicio os
-        JOIN metodoPago mp ON os.idMetodoPago = mp.idMetodoPago
-        WHERE os.idOrdenServicio = @idOrdenServicio;
-
-        -- Validar método de pago
-        IF @descripcionMetodoPago IS NULL
-        BEGIN
-            SELECT '❌ Error: No hay método de pago registrado.' AS Resultado;
-            RETURN 2;
-        END
-
-        -- Validar si es método válido
-        SET @esMetodoValido = CASE
-            WHEN LOWER(@descripcionMetodoPago) LIKE '%nequi%'
-              OR LOWER(@descripcionMetodoPago) LIKE '%daviplata%'
-              OR LOWER(@descripcionMetodoPago) LIKE '%transferencia%'
-              OR LOWER(@descripcionMetodoPago) LIKE '%pse%'
-              OR LOWER(@descripcionMetodoPago) LIKE '%tarjeta%'
-              OR LOWER(@descripcionMetodoPago) LIKE '%sencillo%'
-            THEN 1
-            ELSE 0
-        END;
-
-        IF @esMetodoValido = 0
-        BEGIN
-            SELECT '❌ Error: Solo se aceptan métodos virtuales o efectivo (sencillo).' AS Resultado;
-            RETURN 3;
-        END
-
-        -- Validar estado del pago
-        IF @estadoPago != 'Confirmado'
-        BEGIN
-            SELECT '⚠️ Error: El pago no está confirmado aún.' AS Resultado;
-            RETURN 4;
-        END
-
-        -- Todo bien
-        SELECT '✅ Verificación exitosa. Método aceptado. Estado: En preparación (simulado).' AS Resultado;
-        RETURN 0;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        SELECT '‼️ Error inesperado: ' + @ErrorMessage AS Resultado;
-        RETURN 99;
-    END CATCH
-END
+-----------------------------------------------------------------------
 
 
- EXEC validarPagoOrden @idOrdenServicio = 30;
+-- Este código verifica si una orden de servicio con un ID específico existe en la base de datos. Si existe, actualiza su estado a "confirmado" (representado por el valor 2 en `idEstadoServicio`). Si la orden no existe o ocurre un error durante el proceso, se muestra un mensaje de error. Todo el proceso está envuelto en un bloque `TRY...CATCH` para manejar errores de manera controlada.
 
 
+DECLARE @idOrdenServicio INT = 1;
 
--- Este código verifica si una orden de servicio en la base de datos es válida y tiene el pago correctamente confirmado. Primero, comprueba si la orden existe; luego, obtiene el método de pago y valida que sea un método aceptado (como Nequi, PSE, tarjetas o efectivo tipo "sencillo"). Después, revisa si el estado del pago es "Confirmado". Si todo está bien, devuelve un mensaje de éxito. Si algo falla, corta la ejecución con BREAK y devuelve un mensaje de error indicando el problema específico. Todo esto se hace dentro de un bucle WHILE que se rompe apenas se obtiene un resultado.
-
-
-GO
-DECLARE @idOrdenServicio INT = 30; -- Usa un ID válido
-DECLARE @idCliente INT;
-DECLARE @estadoPago VARCHAR(50);
-DECLARE @descripcionMetodoPago NVARCHAR(MAX);
-DECLARE @esMetodoValido BIT;
-DECLARE @mensaje NVARCHAR(200) = '';
-
--- Simulación de lógica con WHILE + BREAK
-WHILE 1 = 1
-BEGIN
-    -- Verificar si la orden existe
+BEGIN TRY
+    -- Verificar si existe la orden
     IF NOT EXISTS (SELECT 1 FROM ordenServicio WHERE idOrdenServicio = @idOrdenServicio)
     BEGIN
-        SET @mensaje = '❌ Error: Orden no encontrada.';
-        BREAK;
-    END
-
-    -- Obtener datos
-    SELECT 
-        @idCliente = os.idCliente,
-        @estadoPago = os.estadoPago,
-        @descripcionMetodoPago = mp.descripcionMetodoPago
-    FROM ordenServicio os
-    JOIN metodoPago mp ON os.idMetodoPago = mp.idMetodoPago
-    WHERE os.idOrdenServicio = @idOrdenServicio;
-
-    IF @descripcionMetodoPago IS NULL
-    BEGIN
-        SET @mensaje = '❌ Error: No hay método de pago registrado.';
-        BREAK;
-    END
-
-    -- Validar si el método es virtual o efectivo
-    SET @esMetodoValido = CASE
-        WHEN LOWER(@descripcionMetodoPago) LIKE '%nequi%'
-           OR LOWER(@descripcionMetodoPago) LIKE '%daviplata%'
-           OR LOWER(@descripcionMetodoPago) LIKE '%transferencia%'
-           OR LOWER(@descripcionMetodoPago) LIKE '%pse%'
-           OR LOWER(@descripcionMetodoPago) LIKE '%tarjeta%'
-           OR LOWER(@descripcionMetodoPago) LIKE '%sencillo%'
-        THEN 1 ELSE 0
+        RAISERROR('❌ La orden no existe.', 16, 1);
+        RETURN;
     END;
 
-    IF @esMetodoValido = 0
-    BEGIN
-        SET @mensaje = '❌ Error: Solo se aceptan métodos virtuales o efectivo (sencillo).';
-        BREAK;
-    END
+    -- Aquí asumimos que "2" es el estado de "confirmado"
+    UPDATE ordenServicio
+    SET idEstadoServicio = 2
+    WHERE idOrdenServicio = @idOrdenServicio;
 
-    -- Validar estado del pago
-    IF @estadoPago != 'Confirmado'
-    BEGIN
-        SET @mensaje = '⚠️ Error: El pago no está confirmado aún.';
-        BREAK;
-    END
+    SELECT '✅ La orden ha sido confirmada exitosamente.' AS Resultado;
 
-    -- Todo está bien
-    SET @mensaje = '✅ Verificación exitosa. Método aceptado. Estado: En preparación (simulado).';
-    BREAK;
-END
+END TRY
+BEGIN CATCH
+    SELECT '❌ Error inesperado: ' + ERROR_MESSAGE() AS Resultado;
+END CATCH;
 
--- Mostrar mensaje final
-SELECT @mensaje AS Resultado;
+
+
+--------------------------------------------------------------
+
+
+--Este bloque de código en SQL Server verifica si una orden de servicio con un ID específico existe, obtiene su total cobrado y, si el valor es mayor a cero, actualiza el estado de pago como realizado. Si la orden no existe o el total es inválido (menor o igual a cero), lanza un error personalizado mediante `THROW`. Todo está envuelto en un `TRY...CATCH` para capturar y mostrar cualquier error ocurrido durante la ejecución, asegurando que el sistema no falle silenciosamente ante datos inconsistentes.
+
+BEGIN TRY
+    DECLARE @idOrden INT = 30;
+    DECLARE @total DECIMAL(18,2);
+
+    -- Verificar si la orden existe
+    IF NOT EXISTS (SELECT 1 FROM ordenServicio WHERE idOrdenServicio = @idOrden)
+        THROW 50001, 'La orden no existe', 1;
+
+    -- Obtener total cobrado
+    SELECT @total = totalCobrado FROM ordenServicio WHERE idOrdenServicio = @idOrden;
+
+    -- Validar monto
+    IF @total <= 0
+        THROW 50002, 'El total cobrado no es válido', 1;
+
+    -- Actualizar estado de pago
+    UPDATE ordenServicio SET estadoPago = 1 WHERE idOrdenServicio = @idOrden;
+
+    SELECT 'Pago registrado correctamente' AS Resultado;
+END TRY
+BEGIN CATCH
+    SELECT 'Error: ' + ERROR_MESSAGE() AS Resultado;
+END CATCH

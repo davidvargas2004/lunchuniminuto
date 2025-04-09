@@ -62,205 +62,82 @@ JOIN rolUniversitario ru ON c.idRolUniversitario = ru.idRolUniversitario
 JOIN menuComida mc ON mc.idMenuComida = @idMenuComida
 WHERE c.idCliente = @idCliente;
 
+---------------------------------------------------
+
+--Esta consulta evalúa en qué día de la semana se realizó cada orden de servicio utilizando la función `DATENAME(WEEKDAY, o.fechaOrdenServicio)`, que devuelve el nombre del día (como "Lunes", "Martes", etc.). Luego, con una sentencia `CASE`, se determina si ese día corresponde a un día hábil (de lunes a viernes). Si es así, se indica que la promoción está disponible con el mensaje “Promo disponible: Bebida gratis”; de lo contrario, se informa que la promoción no aplica por ser fin de semana. Esta lógica permite identificar visualmente en qué pedidos aplicar la promoción según el día en que se hicieron.
 
 
+BEGIN TRY
+    DECLARE @idOrden INT = 1;
+    DECLARE @diaPedido VARCHAR(15);
+    DECLARE @mensajePromo VARCHAR(100);
 
+    -- Obtener el día de la semana del pedido
+    SELECT @diaPedido = DATENAME(WEEKDAY, fechaOrdenServicio)
+    FROM ordenServicio
+    WHERE idOrdenServicio = @idOrden;
 
--- con RETURN para terminar la ejecución en cada caso según el flujo lógico. Esto mejora el control del proceso y evita seguir ejecutando innecesariamente si algo falla:
+    -- Verificamos si es de LUNES A MIERCOLES
+    SELECT @mensajePromo =
+        CASE 
+            WHEN @diaPedido IN ('Lunes', 'Martes', 'Miércoles') THEN 
+                ':) ¡Promo activa! Pedido entre semana = bebida GRATIS :)'
+            ELSE 
+                '⛔ Promo no válida: los fines de semana no hay bebida gratis 😢'
+        END;
 
+    SELECT @mensajePromo AS PromoBebidaGratis;
 
+END TRY
+BEGIN CATCH
+    SELECT '❌ Error al evaluar la promoción: ' + ERROR_MESSAGE() AS PromoBebidaGratis;
+END CATCH;
 
-GO
--- Condicional CASE sin UPDATE y sin detener si no hay orden pendiente
-DECLARE @idCliente INT = 3;
-DECLARE @idMenuComida INT = 5;
-DECLARE @idRolEspecial INT = 2;
-DECLARE @comprasMinimas INT = 15;
-DECLARE @idOrdenServicio INT = NULL;
-DECLARE @rolActual INT;
-DECLARE @cantidadCompras INT;
-DECLARE @precioOriginal DECIMAL(10,2);
-DECLARE @precioFinal DECIMAL(10,2);
-DECLARE @comentario NVARCHAR(255);
-DECLARE @mensaje NVARCHAR(255);
-
--- Obtener rol del cliente
-SELECT @rolActual = idRolUniversitario 
-FROM cliente 
-WHERE idCliente = @idCliente;
-
-IF @rolActual IS NULL
-BEGIN
-    SELECT 'El cliente no existe o no tiene rol asignado' AS Resultado;
-    RETURN;
-END;
-
--- Obtener cantidad de compras previas (completadas)
-SELECT @cantidadCompras = COUNT(*) 
-FROM ordenServicio os
-JOIN estadoServicio es ON os.idEstadoServicio = es.idEstadoServicio
-WHERE os.idCliente = @idCliente AND es.nombreEstadoServicio = 'Completada';
-
--- Obtener precio original del menú
-SELECT TOP 1 @precioOriginal = precioPrecioComida
-FROM precioComida
-WHERE idMenuComida = @idMenuComida
-ORDER BY fechaActualizacionPrecioComida DESC;
-
-IF @precioOriginal IS NULL
-BEGIN
-    SELECT 'No se encontró precio para el menú seleccionado' AS Resultado;
-    RETURN;
-END;
-
--- Intentar obtener orden pendiente
-SELECT TOP 1 @idOrdenServicio = os.idOrdenServicio
-FROM ordenServicio os
-JOIN estadoServicio es ON os.idEstadoServicio = es.idEstadoServicio
-WHERE os.idCliente = @idCliente AND es.nombreEstadoServicio = 'Pendiente'
-ORDER BY os.fechaOrdenServicio DESC;
-
--- Mensaje personalizado si no hay orden
-SET @mensaje = ISNULL(
-    CAST(@idOrdenServicio AS VARCHAR),
-    'Sin orden pendiente: se calcula de forma independiente.'
-);
-
--- Calcular precio final con CASE
-SET @precioFinal = CASE
-    WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= @comprasMinimas THEN 0
-    WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= 10 THEN @precioOriginal * 0.8
-    WHEN @rolActual = @idRolEspecial THEN @precioOriginal * 0.95
-    ELSE @precioOriginal
-END;
-
--- Generar comentario simulado
-SET @comentario = CASE
-    WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= @comprasMinimas 
-        THEN 'PLATO GRATIS - Cliente Premium con ' + CAST(@cantidadCompras AS VARCHAR) + ' compras'
-    WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= 10 
-        THEN 'Descuento 20% - Cliente frecuente'
-    WHEN @rolActual = @idRolEspecial 
-        THEN 'Descuento 5% - Por rol universitario'
-    ELSE 'Precio regular'
-END;
-
--- Mostrar resultados
 SELECT 
-    'Simulación completada exitosamente' AS Resultado,
-    @mensaje AS OrdenDetectada,
-    @precioOriginal AS PrecioOriginal,
-    @precioFinal AS PrecioFinal,
-    @comentario AS ComentarioSugerido;
-RETURN;
-GO
+    c.nombresCliente + ' ' + c.apellidosCliente AS NombreCliente,
+    o.fechaOrdenServicio,
+    DATENAME(WEEKDAY, o.fechaOrdenServicio) AS DiaSemana
+FROM ordenServicio o
+INNER JOIN cliente c ON o.idCliente = c.idCliente
+ORDER BY o.fechaOrdenServicio;
+
+
+----------------------------------------------------------
+
+
+--Este código en SQL Server valida si un cliente tiene permiso para realizar un pedido en un restaurante específico, dependiendo de su rol universitario. Primero, obtiene el rol del cliente consultando su ID en la tabla `cliente` y relacionándolo con la tabla `rolUniversitario`. Luego, usa una estructura `CASE` para definir un mensaje según las condiciones: si el restaurante es el número 3 y el cliente es "Administrativo", se permite el pedido; si no es administrativo, se deniega; y si es otro restaurante, se permite sin restricciones. Finalmente, el mensaje correspondiente se imprime con `PRINT`.
+
+
+
+DECLARE @idCliente INT = 30;  -- Cliente que hace el pedido
+DECLARE @idRestaurante INT = 3;  -- Restaurante donde quiere comprar
+DECLARE @rolCliente VARCHAR(100);
+DECLARE @mensaje VARCHAR(200);
+
+-- Obtenemos el rol del cliente
+SELECT @rolCliente = ru.nombreRolUniversitario
+FROM cliente c
+JOIN rolUniversitario ru ON c.idRolUniversitario = ru.idRolUniversitario
+WHERE c.idCliente = @idCliente;
+
+-- Usamos CASE para decidir el mensaje
+SET @mensaje = 
+    CASE 
+        WHEN @idRestaurante = 3 AND @rolCliente = 'Administrativo' THEN
+            '✅ Pedido permitido: cliente administrativo autorizado en restaurante 3.'
+        WHEN @idRestaurante = 3 AND @rolCliente <> 'Administrativo' THEN
+            '❌ Pedido denegado: solo administrativos pueden comprar en este restaurante.'
+        ELSE
+            '✅ Pedido permitido en restaurante sin restricción de rol.'
+    END;
+
+-- Mostramos el mensaje
+PRINT @mensaje;
+
+
+
+
+
+
  
 
-
--- El BREAK sirve para salir del ciclo WHILE antes de que se cumplan todas las condiciones, cuando ocurre un caso que ya no tiene sentido seguir evaluando (por ejemplo, si no hay orden pendiente o el cliente no existe).
-
-
-
-GO
--- Script con flujo paso a paso y simulación si no hay orden pendiente
-DECLARE @idCliente INT = 3;
-DECLARE @idMenuComida INT = 5;
-DECLARE @idRolEspecial INT = 2;
-DECLARE @comprasMinimas INT = 15;
-
-DECLARE @paso INT = 1;
-DECLARE @finalizado BIT = 0;
-
-DECLARE @rolActual INT;
-DECLARE @cantidadCompras INT;
-DECLARE @precioOriginal DECIMAL(10,2);
-DECLARE @precioFinal DECIMAL(10,2);
-DECLARE @comentario NVARCHAR(255);
-DECLARE @idOrdenServicio INT = NULL;
-
-WHILE @finalizado = 0
-BEGIN
-    IF @paso = 1
-    BEGIN
-        SELECT @rolActual = idRolUniversitario 
-        FROM cliente 
-        WHERE idCliente = @idCliente;
-
-        IF @rolActual IS NULL
-        BEGIN
-            SELECT 'El cliente no existe o no tiene rol asignado' AS Resultado;
-            BREAK;
-        END
-        SET @paso = 2;
-    END
-
-    ELSE IF @paso = 2
-    BEGIN
-        SELECT @cantidadCompras = COUNT(*) 
-        FROM ordenServicio os
-        JOIN estadoServicio es ON os.idEstadoServicio = es.idEstadoServicio
-        WHERE os.idCliente = @idCliente AND es.nombreEstadoServicio = 'Completada';
-        SET @paso = 3;
-    END
-
-    ELSE IF @paso = 3
-    BEGIN
-        SELECT TOP 1 @precioOriginal = precioPrecioComida 
-        FROM precioComida 
-        WHERE idMenuComida = @idMenuComida
-        ORDER BY fechaActualizacionPrecioComida DESC;
-
-        IF @precioOriginal IS NULL
-        BEGIN
-            SELECT 'No se encontró precio para el menú seleccionado' AS Resultado;
-            BREAK;
-        END
-        SET @paso = 4;
-    END
-
-    ELSE IF @paso = 4
-    BEGIN
-        SELECT TOP 1 @idOrdenServicio = os.idOrdenServicio 
-        FROM ordenServicio os
-        JOIN estadoServicio es ON os.idEstadoServicio = es.idEstadoServicio
-        WHERE os.idCliente = @idCliente AND es.nombreEstadoServicio = 'Pendiente'
-        ORDER BY os.fechaOrdenServicio DESC;
-
-        -- Si no hay orden, solo se simula
-        SET @paso = 5;
-    END
-
-    ELSE IF @paso = 5
-    BEGIN
-        -- Cálculo del precio
-        SET @precioFinal = CASE
-            WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= @comprasMinimas THEN 0
-            WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= 10 THEN @precioOriginal * 0.8
-            WHEN @rolActual = @idRolEspecial THEN @precioOriginal * 0.95
-            ELSE @precioOriginal
-        END;
-
-        SET @comentario = CASE
-            WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= @comprasMinimas 
-                THEN 'PLATO GRATIS - Cliente Premium con ' + CAST(@cantidadCompras AS VARCHAR) + ' compras'
-            WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= 10 
-                THEN 'Descuento 20% - Cliente frecuente'
-            WHEN @rolActual = @idRolEspecial 
-                THEN 'Descuento 5% - Por rol universitario'
-            ELSE 'Precio regular'
-        END;
-
-        -- Mostrar resultados
-        SELECT 
-            CASE 
-                WHEN @idOrdenServicio IS NULL THEN 'No hay orden pendiente: se realizó simulación'
-                ELSE 'Orden encontrada: simulación aplicada'
-            END AS Resultado,
-            @precioOriginal AS PrecioOriginal,
-            @precioFinal AS PrecioFinal,
-            @comentario AS ComentarioSugerido;
-
-        SET @finalizado = 1;
-    END
-END
-GO
