@@ -1,15 +1,15 @@
--- lo que se elabora aca es consultar un plato favorito de un cliente pero validamos si existe ese plato favorito del cliente en nuestros restaurantes registrados en la base de datos ya que lo que permite es que los usuarios puedan buscar exactamente lo que quieren comer 
+-- lo que se elabora aca es consultar un plato favorito de un cliente pero validamos si existe ese plato favorito del cliente en nuestros restaurantes registrados en la base de datos ya que lo que permite es que los usuarios puedan buscar exactamente lo que quieren comer y asi optimizar la busqueda por ellos al restaurante que ofrece el plato 
 
 
 go
 -- Ejercicio IF anidado: Buscar plato favorito del cliente en restaurantes disponibles
 DECLARE @idCliente INT = 2;          -- ID del cliente
 DECLARE @nombrePlatoFavorito VARCHAR(100); -- Variable para almacenar nombre del plato favorito
-DECLARE @encontrado BIT = 0;         -- Flag para indicar si se encontró el plato
+DECLARE @encontrado BIT = 0;         -- Señal para indicar si se encontró el plato o no en nuestra base de datos
 DECLARE @mensaje VARCHAR(300);
 
 -- Obtener el plato favorito del cliente (simulado - en una implementación real podría ser una tabla adicional)
-SELECT @nombrePlatoFavorito = 'Bandeja Paisa'; -- Asumimos este es el plato favorito
+SELECT @nombrePlatoFavorito = 'Bandeja Paisa'; -- Aca damos el indicativo de que plato queremos consultar
 
 -- Verificar si el cliente existe
 IF EXISTS (SELECT 1 FROM cliente WHERE idCliente = @idCliente)
