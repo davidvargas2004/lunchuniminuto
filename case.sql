@@ -1,3 +1,6 @@
+--Este código calcula el precio final de un menú para un cliente, teniendo en cuenta su rol, la cantidad de compras completadas y las promociones disponibles. Primero, verifica si el cliente tiene un rol especial y si cumple con los criterios para obtener descuentos o un plato gratis. Si el cliente tiene el rol especial y ha completado al menos 15 compras, el precio final es gratis. Si tiene al menos 10 compras, recibe un 20% de descuento. Si tiene el rol especial pero menos de 10 compras, recibe un descuento del 5%. De lo contrario, paga el precio completo del menú. Es un enfoque lógico para premiar la fidelidad de ciertos clientes mediante descuentos dinámicos.
+
+
 -- Condicional CASE para aplicar plato gratis a clientes frecuentes con rol específico
 DECLARE @idCliente INT = 3;           -- Cliente a evaluar
 DECLARE @idMenuComida INT = 5;        -- Menú seleccionado

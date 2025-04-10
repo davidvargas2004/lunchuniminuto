@@ -1,4 +1,4 @@
--- Este procedimiento almacenado llamado BuscarPlatoFavorito recibe como parámetro el ID de un cliente y simula obtener su plato favorito (en este caso, "Bandeja Paisa"). Primero verifica si el cliente existe en la base de datos; si no existe, devuelve un mensaje de error. Luego comprueba si ese plato existe en el menú de comidas; si no está, informa que no se encuentra en ningún restaurante. Después verifica si hay restaurantes disponibles actualmente que ofrezcan ese plato; si no los hay, muestra un mensaje indicando que el plato no está disponible hoy. Finalmente, si todas las condiciones se cumplen, retorna un mensaje positivo y una lista de los restaurantes disponibles que ofrecen el plato favorito, junto con su nombre, dirección y precio.
+-- Este procedimiento almacenado llamado BuscarPlatoFavorito recibe como parámetro el ID de un cliente y obtener su plato favorito (en este caso, "Bandeja Paisa"). Primero verifica si el cliente existe en la base de datos; si no existe, devuelve un mensaje de error. Luego comprueba si ese plato existe en el menú de comidas; si no está, informa que no se encuentra en ningún restaurante. Después verifica si hay restaurantes disponibles actualmente que ofrezcan ese plato; si no los hay, muestra un mensaje indicando que el plato no está disponible hoy. Finalmente, si todas las condiciones se cumplen, retorna un mensaje positivo y una lista de los restaurantes disponibles que ofrecen el plato favorito, junto con su nombre, dirección y precio.
 
 go
 CREATE PROCEDURE BuscarPlatoFavorito
@@ -64,7 +64,7 @@ go
 
 
 
--- con RETURN para terminar la ejecución en cada caso según el flujo lógico. Esto mejora el control del proceso y evita seguir ejecutando innecesariamente si algo falla:
+-- Este código determina el precio final de un menú para un cliente específico considerando varios factores: primero verifica si el cliente existe y tiene un rol asignado; luego obtiene la cantidad de compras completadas y el precio original del menú. Dependiendo de condiciones como el rol del cliente, el número de compras realizadas y si hay órdenes pendientes, se ajusta el precio final usando una lógica con `CASE`. Además, se generan mensajes personalizados si el cliente no tiene órdenes pendientes o si hay problemas con el precio o el rol. Es una implementación lógica para calcular precios dinámicos en función de roles y antecedentes del cliente.
 
 
 
@@ -155,7 +155,7 @@ GO
 
 
 -----------------------------------------------------------------------------
--- RETURN en esta estructura, elaboramos una lógica clara. Lo usaremos para salir inmediatamente si el cliente no existe, ya que no tiene sentido seguir evaluando lo demás. También agregué SELECT @mensaje AS Resultado antes del RETURN, así no te pierdes el mensaje.
+-- Este código verifica si un cliente puede ordenar un menú dependiendo de la hora del día y la categoría del menú. Primero, comprueba si el cliente y el menú existen en la base de datos. Si el menú es válido, obtiene su categoría y compara la hora actual del sistema con el rango de horarios permitido para esa categoría (como Desayuno, Almuerzo, Cena, etc.). Luego, genera un mensaje indicando si el cliente puede ordenar el menú o si está fuera del horario adecuado. Es útil para gestionar restricciones de horario en un sistema de pedidos
 
 
 -- Ejercicio de IF anidado corregido: Verificar disponibilidad de menú según hora del día y categoría

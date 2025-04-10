@@ -62,12 +62,12 @@ go
 
 ---------------------------------------------------
 
---IF EXISTS que verifica si un cliente ya ha realizado una orden en una fecha específica. Si ya existe una orden, imprime un mensaje informando que ya realizó un pedido; si no, indica que puede realizarlo:
+--IF EXISTS que verifica si un cliente ya ha realizado una orden en una fecha específica. Si ya existe una orden, imprime un mensaje informando que ya realizó un pedido; si no, indica que puede realizar el pedido de la fomra que guste comprar su comida.
 
 
 DECLARE @idCliente INT = 5;
-DECLARE @fecha DATE = CAST(GETDATE() AS DATE);  -- Fecha actual
 
+DECLARE @fecha DATE = CAST(GETDATE() AS DATE);  --esta funcion da el funcionamiento para poder selecionare un horario en tiempo real si se llegara hacer la peticion de un cliente en tiempo real y la convierte en formato date.
 IF EXISTS (
     SELECT 1
     FROM ordenServicio
@@ -85,7 +85,7 @@ END
 
 
 ---------------------------------------------------------
---Este código en SQL Server verifica si existe un cliente con el nombre **Laura** o **David** en la base de datos. Si alguno de ellos está registrado, se les aplica un **cupón especial** que reduce el precio del almuerzo a **$3.000**; de lo contrario, el almuerzo mantiene su precio original de **$10.000**. La lógica se implementa con la estructura `IF EXISTS`, que consulta la tabla `cliente` para buscar esos nombres y, dependiendo del resultado, ajusta el valor de la variable `@nuevoPrecio` y muestra un mensaje adecuado usando `PRINT`.
+--Este código en SQL Server verifica si existe un cliente con el nombre Valentina o Mateo en la base de datos. Si alguno de ellos está registrado, se les aplica un cupón especial que reduce el precio del almuerzo a $3.000; de lo contrario, el almuerzo mantiene su precio original de $10.000. La lógica se implementa con la estructura IF EXISTS, que consulta la tabla cliente para buscar esos nombres y, dependiendo del resultado, ajusta el valor de la variable @nuevoPrecio y muestra un mensaje adecuado usando PRINT.
 
 
 DECLARE @precioAlmuerzo DECIMAL(10,2) = 10000; -- Precio regular
