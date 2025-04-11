@@ -1,6 +1,5 @@
 -- 1. Ha surgido una nuava opción de pago BITCOINS, y todos los restaurantes deben de estar obligados a implementar este metodo de pago
 
-BEGIN TRANSACTION
 DECLARE @cantidad INT = 0, @contador INT = 1;
 DECLARE @idOpcionPago INT, @idRestaurante INT;
 DECLARE @nombreOpcionPago VARCHAR(100) = 'Pago con Bitcoins';
@@ -21,18 +20,12 @@ BEGIN
 
 	SET @contador = @contador + 1
 	
-	IF @contador > @cantidad
-		BEGIN			
-			COMMIT;
-			BREAK;
-		END
 END
 
 
 ---------------------------------------------------------------------------------------------------------------------
 
 -- 2. Se van a aumentar los precios de comidas un 10% hasta encontrarse un un valor superior al límite, se detendrá
-BEGIN TRANSACTION
 DECLARE @contador int = 1;
 DECLARE @idComida INT, @preciComida INT;
 DECLARE @precioLimite DECIMAL (18,2) = 12000;
@@ -60,7 +53,6 @@ COMMIT
 
 -- 3. Existen en registroMenu, se han registrado compras, pero a 0 cantidad, estos datos se desean eliminar
 
-BEGIN TRANSACTION
 DECLARE @cantidad INT = 0, @contador INT= 1;
 DECLARE @idComida INT, @idPrecioC INT, @idBebida INT, @idPrecioB INT, @idServicio INT;
 
