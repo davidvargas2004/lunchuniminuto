@@ -1,6 +1,6 @@
 -- 1. El restaurante ha realizado una petición, es el incrementar un 10% de los precios de las comidas y bebidas.
 
-BEGIN TRANSACTION
+
 DECLARE @categoria INT, @total INT;
 DECLARE @contador INT = 1;
 DECLARE @idMenuComida INT, @precioActualizar INT;
@@ -24,25 +24,9 @@ BEGIN
 	SET @contador = @contador + 1;
 END
 
-SET @contador = @contador - 1;
-
-IF @contador = @total
-	begin
-	PRINT 'Si ha guardado la información de manera correcta';
-	COMMIT;
-	end
-ELSE
-	begin
-	PRINT 'No se puede guardar cambios'
-	ROLLBACK;
-	RETURN;
-	end
-
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- 2. los restaurantes han registrado Bebidas, pero no han asignado sus respectivos precios, se debe de corregir el estado a NO DISPONIBLE
-
-BEGIN TRANSACTION
 
 DECLARE @idDisponibilidadNODISPONIBLE INT;
 DECLARE @contador1 INT = 1;
@@ -70,26 +54,9 @@ BEGIN
 	SET @contador1 = @contador1+1
 END
 
-SET @contador1 = @contador1-1;
-
-IF @contador1 = @cantidad1
-	begin
-	PRINT 'Si ha guardado la información de manera correcta';
-	COMMIT;
-	end
-ELSE
-	begin
-	PRINT 'No se puede guardar cambios'
-	ROLLBACK;
-	RETURN;
-	end
-
-
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 -- 3. Existen vairos restaurantes que se han registrado, pero no han indicado ninguno de sus medios de pago, el sistema debera crear un metodo a cada 
 --    restaurante este sera por defecto EFECTIVO
-
-BEGIN TRANSACTION
 
 DECLARE @idOpcionPago INT, @idRestaurante INT;
 DECLARE @contador1 INT = 1;
@@ -121,19 +88,5 @@ BEGIN
 END
 
 SET @contador1 = @contador1-1;
-
-IF @contador1 = @cantidad1
-	begin
-	PRINT 'Si ha guardado la información de manera correcta';
-	COMMIT
-	RETURN;
-	end
-ELSE
-	begin
-	PRINT 'No se puede guardar cambios'
-	ROLLBACK;
-	RETURN;
-	end
-
 
 -- NOTA: Insertar restaurante sin metodo de pago.
