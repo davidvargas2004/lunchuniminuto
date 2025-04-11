@@ -1,7 +1,5 @@
 -- 1. El cliente solicita ser dado de baja del sistema ya que indica a pesar de registrarse en el, no lo ha usado en ningun momento 
 
-BEGIN TRANSACTION;
-
 DECLARE @idCliente INT = ; -- ID del cliente a eliminar
 DECLARE @existenciaCliente INT;
 DECLARE @nombres VARCHAR(200);
@@ -26,7 +24,6 @@ END
 ELSE
 BEGIN
 	PRINT 'El cliente con id '+CONVERT(VARCHAR(5),@idCliente)+' , no se encuentra registrado en el sistema';
-	ROLLBACK;
 	RETURN; -- salgo de la transaccion, pues el cliente no existe en la base de datos
 END
 
@@ -40,7 +37,6 @@ IF @tieneOrdenes > 0
 BEGIN
     -- Si tiene órdenes, no se elimina el cliente
     PRINT 'No se puede eliminar el cliente '+CONVERT(VARCHAR,@nombres)+' porque tiene órdenes de servicio asociadas';
-    ROLLBACK;
     RETURN;
 END
 ELSE
@@ -50,8 +46,6 @@ BEGIN
     PRINT 'Cliente eliminado correctamente '+CONVERT(VARCHAR,@nombres);
 END
 
--- Si todo es correcto, se realiza COMMIT de la transacción
-COMMIT;
 
 -- Nota: Se debe insertar datos de un cliente, que no halla realizado alguna orden de servicio
 
@@ -59,11 +53,11 @@ COMMIT;
 
 -- 2. El cliente desea actualizar datos personales, proporciona la direccion residencial y correo electronico.
 
-BEGIN TRANSACTION;  -- Inicia la transacción
-
 -- Verificamos si el cliente existe en la tabla cliente
 DECLARE @idCliente INT = 3;  -- ID del cliente a actualizar
 DECLARE @clienteExiste INT;
+DECLARE @direccion varchar(100)= 'Nueva dirección 123' ;
+DECLARE @correo varchar(100)='nuevoemail@dominio.com';
 
 -- Comprobamos si el cliente existe
 SELECT @clienteExiste = COUNT(*)
@@ -74,7 +68,6 @@ IF @clienteExiste = 0
 BEGIN
     -- Si el cliente no existe, deshacemos la transacción
     PRINT 'El cliente no existe. Cancelando la transacción.';
-    ROLLBACK;
 	RETURN;
 END
 ELSE
@@ -82,11 +75,10 @@ BEGIN
     -- Si el cliente existe, actualizamos la información
     UPDATE cliente
     SET 
-        direccionCliente = 'Nueva dirección 123', 
-        correoECliente = 'nuevoemail@dominio.com'
+        direccionCliente = @direccion, 
+        correoECliente = @correo
     WHERE idCliente = @idCliente;
-    -- Si todo va bien, confirmamos la transacción
-    COMMIT TRANSACTION;
+
     PRINT 'La transacción se completó con éxito.';
 END
 
