@@ -1,41 +1,46 @@
 --Este código calcula el precio final de un menú para un cliente, teniendo en cuenta su rol, la cantidad de compras completadas y las promociones disponibles. Primero, verifica si el cliente tiene un rol especial y si cumple con los criterios para obtener descuentos o un plato gratis. Si el cliente tiene el rol especial y ha completado al menos 15 compras, el precio final es gratis. Si tiene al menos 10 compras, recibe un 20% de descuento. Si tiene el rol especial pero menos de 10 compras, recibe un descuento del 5%. De lo contrario, paga el precio completo del menú. Es un enfoque lógico para premiar la fidelidad de ciertos clientes mediante descuentos dinámicos.
 
 GO
--- Condicional CASE para aplicar plato gratis a clientes frecuentes con rol específico
-DECLARE @precioAlmuerzo DECIMAL(10,2) = 10000; -- Precio regular
+-- CASE para ajustar precio del almuerzo según clientes frecuentes
+DECLARE @precioAlmuerzo DECIMAL(10,2) = 10000;
 DECLARE @nuevoPrecio DECIMAL(10,2);
-DECLARE @idMenuComida INT = 3; -- Suponiendo que este es el ID del almuerzo
+DECLARE @idMenuComida INT = 3;
 DECLARE @mensaje VARCHAR(200);
+DECLARE @hayClientesFrecuentes BIT;
 
-IF EXISTS (
-    SELECT 1
-    FROM cliente
-    WHERE nombresCliente IN ('Valentina', 'Mateo')
-)
-BEGIN
-    SET @nuevoPrecio = 3000;
-    SET @mensaje = '🎉 Estos clientes tienen un cupón. El almuerzo cuesta: $' + CAST(@nuevoPrecio AS VARCHAR);
+-- Verificamos si hay clientes frecuentes
+SELECT @hayClientesFrecuentes = 
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM cliente
+            WHERE nombresCliente IN ('Valentina', 'Mateo')
+        )
+        THEN 1 ELSE 0
+    END;
 
-    -- Actualizamos el precio del almuerzo
-    UPDATE precioComida
-    SET precioPrecioComida = @nuevoPrecio
-    WHERE idMenuComida = @idMenuComida;
+-- Definimos precio y mensaje con CASE
+SET @nuevoPrecio = 
+    CASE @hayClientesFrecuentes
+        WHEN 1 THEN 3000
+        ELSE @precioAlmuerzo
+    END;
 
-    SELECT @mensaje AS Mensaje;
-END
-ELSE
-BEGIN
-    SET @nuevoPrecio = @precioAlmuerzo;
-    SET @mensaje = '💸 Sin cupón. El almuerzo cuesta: $' + CAST(@nuevoPrecio AS VARCHAR);
+SET @mensaje = 
+    CASE @hayClientesFrecuentes
+        WHEN 1 THEN '🎉 Estos clientes tienen un cupón. El almuerzo cuesta: $' + CAST(@nuevoPrecio AS VARCHAR)
+        ELSE '💸 Sin cupón. El almuerzo cuesta: $' + CAST(@nuevoPrecio AS VARCHAR)
+    END;
 
-    -- Restauramos el precio normal
-    UPDATE precioComida
-    SET precioPrecioComida = @nuevoPrecio
-    WHERE idMenuComida = @idMenuComida;
+-- Actualizamos precio
+UPDATE precioComida
+SET precioPrecioComida = @nuevoPrecio
+WHERE idMenuComida = @idMenuComida;
 
-    SELECT @mensaje AS Mensaje;
-END
+-- Mostramos mensaje
+SELECT @mensaje AS Mensaje;
 GO
+
 
 ---------------------------------------------------
 

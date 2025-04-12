@@ -1,90 +1,47 @@
--- Este procedimiento almacenado llamado BuscarPlatoFavorito recibe como parámetro el ID de un cliente y obtener su plato favorito (en este caso, "Bandeja Paisa"). Primero verifica si el cliente existe en la base de datos; si no existe, devuelve un mensaje de error. Luego comprueba si ese plato existe en el menú de comidas; si no está, informa que no se encuentra en ningún restaurante. Después verifica si hay restaurantes disponibles actualmente que ofrezcan ese plato; si no los hay, muestra un mensaje indicando que el plato no está disponible hoy. Finalmente, si todas las condiciones se cumplen, retorna un mensaje positivo y una lista de los restaurantes disponibles que ofrecen el plato favorito, junto con su nombre, dirección y precio.
-
+-- Este código verifica si un restaurante específico está disponible (es decir, si su campo `disponibilidadRestaurante` es igual a 1) y, si es así, actualiza ese valor a 0, simulando que el restaurante ha cerrado. Antes de hacerlo, se asegura de que el restaurante exista en la base de datos. Si no existe, muestra un mensaje indicando que no se encontró. Si todo está bien, realiza el cambio y devuelve un mensaje informando que el restaurante se cerró correctamente. Si hay un error (como un conflicto de claves foráneas), se termina la instrucción sin afectar otras cosas.
 GO
--- Condicional CASE sin UPDATE y sin detener si no hay orden pendiente
-DECLARE @idCliente INT = 3;
-DECLARE @idMenuComida INT = 5;
-DECLARE @idRolEspecial INT = 2;
-DECLARE @comprasMinimas INT = 15;
-DECLARE @idOrdenServicio INT = NULL;
-DECLARE @rolActual INT;
-DECLARE @cantidadCompras INT;
-DECLARE @precioOriginal DECIMAL(10,2);
-DECLARE @precioFinal DECIMAL(10,2);
-DECLARE @comentario NVARCHAR(255);
+DECLARE @idRestaurante INT = 2;
+DECLARE @minimoPlatos INT = 5;
+DECLARE @platosDisponibles INT;
 DECLARE @mensaje NVARCHAR(255);
 
--- Obtener rol del cliente
-SELECT @rolActual = idRolUniversitario 
-FROM cliente 
-WHERE idCliente = @idCliente;
-
-IF @rolActual IS NULL
+-- Verificar si el restaurante existe
+IF NOT EXISTS (SELECT 1 FROM restaurante WHERE idRestaurante = @idRestaurante)
 BEGIN
-    SELECT 'El cliente no existe o no tiene rol asignado' AS Resultado;
+    SELECT '❌ Restaurante no encontrado en el sistema.' AS Mensaje;
     RETURN;
 END;
 
--- Obtener cantidad de compras previas (completadas)
-SELECT @cantidadCompras = COUNT(*) 
-FROM ordenServicio os
-JOIN estadoServicio es ON os.idEstadoServicio = es.idEstadoServicio
-WHERE os.idCliente = @idCliente AND es.nombreEstadoServicio = 'Completada';
-
--- Obtener precio original del menú
-SELECT TOP 1 @precioOriginal = precioPrecioComida
-FROM precioComida
-WHERE idMenuComida = @idMenuComida
-ORDER BY fechaActualizacionPrecioComida DESC;
-
-IF @precioOriginal IS NULL
+-- Verificar si está abierto
+IF (SELECT disponibilidadRestaurante FROM restaurante WHERE idRestaurante = @idRestaurante) = 0
 BEGIN
-    SELECT 'No se encontró precio para el menú seleccionado' AS Resultado;
+    SELECT 'ℹ️ El restaurante ya está cerrado.' AS Mensaje;
     RETURN;
 END;
 
--- Intentar obtener orden pendiente
-SELECT TOP 1 @idOrdenServicio = os.idOrdenServicio
-FROM ordenServicio os
-JOIN estadoServicio es ON os.idEstadoServicio = es.idEstadoServicio
-WHERE os.idCliente = @idCliente AND es.nombreEstadoServicio = 'Pendiente'
-ORDER BY os.fechaOrdenServicio DESC;
+-- Contar cantidad de menús disponibles
+SELECT @platosDisponibles = COUNT(*) 
+FROM menuComida
+WHERE idRestaurante = @idRestaurante;
 
--- Mensaje personalizado si no hay orden
-SET @mensaje = ISNULL(
-    CAST(@idOrdenServicio AS VARCHAR),
-    'Sin orden pendiente: se calcula de forma independiente.'
-);
-
--- Calcular precio final con CASE
-SET @precioFinal = CASE
-    WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= @comprasMinimas THEN 0
-    WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= 10 THEN @precioOriginal * 0.8
-    WHEN @rolActual = @idRolEspecial THEN @precioOriginal * 0.95
-    ELSE @precioOriginal
+-- Validar cantidad mínima de platos
+IF @platosDisponibles < @minimoPlatos
+BEGIN
+    SELECT '⚠️ El restaurante no tiene suficientes platos para operar (' 
+           + CAST(@platosDisponibles AS VARCHAR) + ' disponibles).' AS Mensaje;
+    RETURN;
 END;
 
--- Generar comentario simulado
-SET @comentario = CASE
-    WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= @comprasMinimas 
-        THEN 'PLATO GRATIS - Cliente Premium con ' + CAST(@cantidadCompras AS VARCHAR) + ' compras'
-    WHEN @rolActual = @idRolEspecial AND @cantidadCompras >= 10 
-        THEN 'Descuento 20% - Cliente frecuente'
-    WHEN @rolActual = @idRolEspecial 
-        THEN 'Descuento 5% - Por rol universitario'
-    ELSE 'Precio regular'
-END;
+-- Todo bien: cerrar restaurante
+UPDATE restaurante
+SET disponibilidadRestaurante = 0
+WHERE idRestaurante = @idRestaurante
+  AND disponibilidadRestaurante = 1;
 
--- Mostrar resultados
-SELECT 
-    'Simulación completada exitosamente' AS Resultado,
-    @mensaje AS OrdenDetectada,
-    @precioOriginal AS PrecioOriginal,
-    @precioFinal AS PrecioFinal,
-    @comentario AS ComentarioSugerido;
-RETURN;
+
+-- Confirmación
+SELECT '✅ Restaurante cerrado exitosamente por baja cantidad de platos.' AS Mensaje;
 GO
-
 
 
 -------------------------------------------------------------------
