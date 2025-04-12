@@ -1,4 +1,3 @@
-
 -- El código implementa un sistema de verificación de pagos usando TRY CATCH en SQL. Cuando un cliente hace un pedido, este script verifica si existe una orden con el ID especificado, comprueba si el cliente ha seleccionado un método de pago virtual (como Nequi, Daviplata o transferencia bancaria), y valida que el pago haya sido confirmado en el sistema. Si todas las condiciones se cumplen, actualiza el estado de la orden a "En preparación" y registra este cambio en el historial. Si ocurre algún error (orden inexistente, método de pago no virtual, pago no confirmado), captura la excepción, muestra un mensaje personalizado según el tipo de error, y registra el problema en una tabla de logs para su seguimiento.
 
 GO
